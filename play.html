@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta charset="UTF-8" />
+    <title>Spin-off of Song Player</title>
+    <meta name="description" content="Base64 to JavaScript Web Audio API Player Library Demonstration for Khan Academy Computing Community by @LeaferStudios on September XX, 2024" />
+    <meta name="author" content="LeaferStudios" />
+    <meta name="keywords" content="LeaferStudios,Song,Audio,Base64,WebAudioAPI,Library,Demo,KhanAcademy,JavaScript" />
+    <!-- Meta tag to ensure the website scales the same across all devices for responsive web design -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<body>
+
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/biodynamic.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/calm-background.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/classic-atmosphere.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/click-button.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/click.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/drum-roll.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/emotional.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/hammer-or-mace.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/lament.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/laughing.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/mega-horn.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/mouse-click.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/notification.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/ritualistic.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/rolling-dice.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/BlitzTracker/game_sounds@main/js/sword.js"></script>
+
+    <script type>
+        
+        //Audio Library Copyright (c) 2024 LeaferStudios
+        //https://www.khanacademy.org/computer-programming/song-player-elektronomia-sky-high
+        var Base64Sound = function(){
+
+            Base64Sound = function(t, params) {
+
+                this.audio = t;
+                this.audioContext = new(AudioContext || webkitAudioContext);
+                this.analyser = this.audioContext.createAnalyser();
+                this.analyser.fftSize = 256;
+                this.source = null;
+                this.buffer = null;
+
+                this.isPlaying = 0;
+                this.startTime = 0;
+                this.elapsedTime = 0;
+                this.duration = 0;
+                this.hasEnded = 0;
+                this.isPaused = 0;
+
+                this.loop = 0;
+                this.onLoad = null;
+                this.onEnd = null;
+
+                for(var param in params){
+                    this[param] = params[param];
+                }
+                this.loadAudio();
+
+            };
+            Base64Sound.prototype._convertBase64ToArrayBuffer = function(t) {
+                for (var e = atob(t.split(",")[1]), i = e.length, a = new Uint8Array(i), n = 0; n < i; n++) a[n] = e.charCodeAt(n);
+                return a.buffer;
+            };
+            Base64Sound.prototype.loadAudio = function() {
+                var e = this._convertBase64ToArrayBuffer(this.audio), i = this;
+                this.audioContext.decodeAudioData(e, function(t) {
+
+                    i.buffer = t, i.duration = t.duration; 
+                    console.log((new Date).toLocaleString().replace(",", " •") + ": Audio loaded successfully");
+                    if(i.onLoad) i.onLoad();
+
+                }, function(t) {
+                    console.log((new Date).toLocaleString().replace(",", " •") + ": Error decoding audio data: " + t);
+                });
+            };
+            Base64Sound.prototype.togglePlayPause = function() {
+                this.hasEnded ? (this.play(), this.hasEnded = 0) : this.isPlaying ? this.pause() : !this.isPlaying && this.buffer && this.play()
+            };
+            Base64Sound.prototype.play = function() {
+                if (this.buffer) {
+
+                    this.source = this.audioContext.createBufferSource();
+                    this.source.buffer = this.buffer;
+                    this.source.connect(this.analyser);
+                    this.analyser.connect(this.audioContext.destination);
+
+                    let t = this.elapsedTime > 0 ? this.elapsedTime : 0;
+                    this.startTime = this.audioContext.currentTime - t;
+                    this.source.start(0, t);
+                    this.isPlaying = 1;
+                    this.hasEnded = 0;
+                    this.isPaused = 0;
+
+                    let e = this;
+                    this.source.onended = function() {
+                        if(e.onEnd) e.onEnd();
+                        e.isPaused || (e.loop ? e.play() : (e.isPlaying = 0, e.elapsedTime = 0, e.hasEnded = 1))
+                    }
+
+                }
+            };
+            Base64Sound.prototype.pause = function() {
+                this.isPlaying && (this.source.stop(), this.elapsedTime = this.audioContext.currentTime - this.startTime, this.isPlaying = 0, this.isPaused = 1)
+            };
+            Base64Sound.prototype._formatTime = function(t) {
+                let e = Math.floor(t % 60);
+                return `${Math.floor(t/60)}:${e<10?"0":""}${e}`
+            };
+            return Base64Sound;
+
+        }();
+
+        var names = ["Settlement", "City", "Click", "Click2", "Mouse click", "Builing", "Building2", "Robber", "Dice", "Pop", "The winner is...", "Trading menu", "Home menu", "Credits go to...", "Gameplay", "Gameplay"];
+        var audioArray = [biodynamic, mega_horn, click_button, click, mouse_click, hammer_or_mace, sword, laughing, rolling_dice, notification, drum_roll, calm_background, classic_atmosphere, emotional, lament, ritualistic];
+        
+        var sounds = [], idx = 0;
+        document.body.innerHTML = (idx+1)+"/"+(audioArray.length+1)+": "+names[idx];
+        for(var i = 0; i < audioArray.length; i++){
+            
+            sounds.push(new Base64Sound(audioArray[i], {
+                onEnd: function(){
+                    idx++;
+                    document.body.innerHTML = (idx+1)+"/"+(audioArray.length+1)+": "+names[idx];
+                    sounds[idx].play();
+                }
+            }));
+            if(!i) sounds[i].onLoad = function(){ this.play(); };
+
+        }
+        
+    </script>
+    
+</body>
+
+</html>
